@@ -1,0 +1,25 @@
+<?php if ($this->previewMode): ?>
+
+    <div class="form-control">
+        <?= $value ?>
+    </div>
+
+<?php else: ?>
+<div id="vue-app">
+    <div class="uk-position-center uk-margin-top">
+        <div v-if="loading" uk-spinner="ratio: 3"></div>
+    </div>
+    <vue-tree :structure='<?=json_encode($menu)?>'
+              :currentlang="'<?= $defaultLocale ?>'"
+              :locales='<?= json_encode($locales)?>'
+              v-on:loaded="onLoaded">
+
+    </vue-tree>
+    <input
+            id="menueditor-value"
+            type="hidden"
+            name="<?= $name ?>"
+            value=""
+    />
+</div>
+<?php endif ?>

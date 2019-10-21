@@ -1,0 +1,11 @@
+# ===================================
+#  Form Field Definitions
+# ===================================
+
+fields:
+  descr:
+    label: Enhanced Backend
+    type: section
+    comment: Here you can edit the name and the structure of the backend menu
+  menuItems:
+    type: menueditor

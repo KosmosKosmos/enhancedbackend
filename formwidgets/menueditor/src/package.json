@@ -1,0 +1,37 @@
+{
+    "name": "menu",
+    "description": "menu js",
+    "repository": {
+        "type": "",
+        "url": ""
+    },
+    "version": "1.0.0",
+    "author": "Mathias Pürzl : KosmosKosmos Webentwicklung",
+    "license": "ISC",
+    "scripts": {
+        "build": "parcel build menu/menueditor.js -d ../assets --no-source-maps --public-url ./",
+        "watch-tree": "parcel watch menu/menueditor.js -d ../assets --public-url ./",
+        "watch-general": "parcel watch general/general.js -d ../assets --public-url ./"
+    },
+    "alias": {
+        "vue$": "vue/dist/vue.esm.js",
+        "uikit$": "./src/uikit/dist/js"
+    },
+    "devDependencies": {
+        "@babel/core": "^7.4.5",
+        "@babel/plugin-proposal-optional-chaining": "^7.2.0",
+        "@vue/component-compiler-utils": "^3.0.0",
+        "babel-core": "^6.26.3",
+        "babel-preset-env": "^1.7.0",
+        "cssnano": "^4.1.10",
+        "sass": "^1.17.4",
+        "vue-template-compiler": "^2.6.10"
+    },
+    "dependencies": {
+        "axios": "^0.19.0",
+        "debounce": "^1.2.0",
+        "sl-vue-tree": "^1.8.4",
+        "vue": "^2.6.10",
+        "vue-hot-reload-api": "^2.3.3"
+    }
+}

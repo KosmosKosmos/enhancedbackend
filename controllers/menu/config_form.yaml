@@ -1,0 +1,31 @@
+# ===================================
+#  Form Behavior Config
+# ===================================
+
+# Record name
+name: Menu
+
+# Model Form Field configuration
+form: $/kosmoskosmos/enhancedbackend/models/menu/fields.yaml
+
+# Model Class name
+modelClass: KosmosKosmos\EnhancedBackend\Models\Menu
+
+# Default redirect location
+defaultRedirect: kosmoskosmos/enhancedbackend/menu
+
+# Create page
+create:
+    title: Create Menu
+    redirect: kosmoskosmos/enhancedbackend/menu/update/:id
+    redirectClose: kosmoskosmos/enhancedbackend/menu
+
+# Update page
+update:
+    title: Edit Menu
+    redirect: kosmoskosmos/enhancedbackend/menu
+    redirectClose: kosmoskosmos/enhancedbackend/menu
+
+# Preview page
+preview:
+    title: Preview Menu
