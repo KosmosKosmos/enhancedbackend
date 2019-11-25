@@ -155,4 +155,9 @@ class MenuEditor extends RichEditor
         return '/modules/backend/formwidgets/richeditor/assets';
     }
 
+/*    public function onUpdateNode() {
+        $input = $_POST;
+        return $input;
+    }*/
+
 }

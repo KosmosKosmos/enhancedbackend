@@ -154,6 +154,11 @@
             this.richEditor = $('#modal-close-outside [data-control=richeditor]');
             this.nodes = this.structure;
             window.slVueTree = this.$refs.slVueTree;
+/*
+            slVueTree.$on('input', () => {
+                console.log('jetze');
+            });
+*/
             this.$emit('loaded', true);
         },
         methods: {
@@ -241,17 +246,33 @@
                         this.translations.help.value[this.translations[type].current] = $('.field-richeditor textarea').val();
                     }
                     if (this.translations[type].value) {
-                        data[type] = this.translations[type].value;
+                        data[type] = Object.assign({}, this.translations[type].value);
                         this.translations[type].value = [];
                     }
                 }
                 setTimeout(() => {
                     slVueTree.updateNode(this.selectedNode.path, {data: Object.assign({}, data)});
                     this.save();
+//                    this.updateNode(this.selectedNode.path, this.nodes, data);
                     this.currentNode = null;
                 });
                 UIkit.modal('#modal-close-outside').hide();
             },
+/*            updateNode(path, nodes, data) {
+                if (path.length > 1) {
+                    const item = path.shift();
+                    const childNodes = nodes.children ? nodes.children[item] : nodes[item];
+                    this.updateNode(path, childNodes, data);
+                } else {
+                    const updatedNode = nodes.children[path[0]];
+                    $.request('onUpdateNode', {
+                        data: {node: updatedNode},
+                        success: function (data) {
+                            console.log(data);
+                        }
+                    });
+                }
+            },*/
             save() {
                 $('#menueditor-value').val(JSON.stringify(this.nodes));
             }
