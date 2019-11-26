@@ -292,6 +292,7 @@ class Menu extends Model
                     $subMenu = array_merge($subMenu, $item);
                 }
                 $newItem->allItems = $items;
+                $newItem->children = $items;
                 $newItem->subMenu = $subMenu;
                 $newItem->isGrouped = true;
             }
@@ -307,6 +308,16 @@ class Menu extends Model
         if (count($subMenuItems)) {
             foreach ($subMenuItems as $subItem) {
                 $subActive = false;
+                if (strpos($subItem['key'], 'system::lang.system') !== false && key_exists('children', $subItem)) {
+                    foreach ($subItem['children'] as $child) {
+                        Log::info($child['key']);
+                        $this->flatMenu[$child['key']] = [
+                            'label' => self::getLabel($child, $locale, $child['title']),
+                            'description' => self::getDescription($child, $locale, $child['title']),
+                            'url' => $ocItems[$child['key']]->url
+                        ];
+                    }
+                }
                 if (key_exists($subItem['key'], $ocItems)) {
                     $subMenuItem = $this->combineMenuData($ocItems[$subItem['key']], $subItem, $ocItems, $locale, $subActive, $currentKey);
                     if ($currentKey == '') {
