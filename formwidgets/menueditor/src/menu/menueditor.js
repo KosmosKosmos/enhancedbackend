@@ -1,8 +1,8 @@
 import Vue from 'vue$';
 import VueTree from './VueTree';
-
 //import 'sl-vue-tree/dist/sl-vue-tree-dark.css'
 import './menueditor.scss';
+Vue.config.productionTip = false;
 
 setTimeout(function() {
     new Vue({

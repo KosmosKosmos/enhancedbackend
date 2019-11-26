@@ -9,7 +9,8 @@
     "author": "Mathias Pürzl : KosmosKosmos Webentwicklung",
     "license": "ISC",
     "scripts": {
-        "build": "parcel build menu/menueditor.js -d ../assets --no-source-maps --public-url ./",
+        "build-tree": "parcel build menu/menueditor.js -d ../assets --no-source-maps --public-url ./",
+        "build-general": "parcel build general/general.js -d ../assets --no-source-maps --public-url ./",
         "watch-tree": "parcel watch menu/menueditor.js -d ../assets --public-url ./",
         "watch-general": "parcel watch general/general.js -d ../assets --public-url ./"
     },

@@ -50,6 +50,7 @@ class Menu extends Model
             File::makeDirectory(storage_path('eventmanager/menu/'));
         }
         File::put(storage_path('eventmanager/menu/') . 'menu.yaml', $menuYaml);
+        Cache::forget('searchTags');
         $this->sendHelp($helpData);
     }
 

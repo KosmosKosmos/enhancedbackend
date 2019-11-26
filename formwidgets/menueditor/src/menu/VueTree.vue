@@ -274,6 +274,7 @@
                 }
             },*/
             save() {
+                console.log(this.selectedNode.path, JSON.stringify(this.nodes));
                 $('#menueditor-value').val(JSON.stringify(this.nodes));
             }
         }
