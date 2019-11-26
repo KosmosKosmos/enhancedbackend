@@ -81,8 +81,16 @@ class MenuEditor extends RichEditor
     }
 
     private function addHelpContent(&$menu) {
-        $file = 'http://which.andevent.net/centralized/help';
-        $content = @file_get_contents($file);
+        $url = 'http://which.andevent.net/centralized/help';
+        $options = array(
+            'http' => array(
+                'method'  => 'GET',
+                'timeout' => 12
+            )
+        );
+        $context  = stream_context_create($options);
+        $content = file_get_contents($url, false, $context);
+
         if ($content) {
             $yamlContents = json_decode($content, true)['help'];
             foreach ($menu as &$entry) {
