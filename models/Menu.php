@@ -310,12 +310,13 @@ class Menu extends Model
                 $subActive = false;
                 if (strpos($subItem['key'], 'system::lang.system') !== false && key_exists('children', $subItem)) {
                     foreach ($subItem['children'] as $child) {
-                        Log::info($child['key']);
-                        $this->flatMenu[$child['key']] = [
-                            'label' => self::getLabel($child, $locale, $child['title']),
-                            'description' => self::getDescription($child, $locale, $child['title']),
-                            'url' => $ocItems[$child['key']]->url
-                        ];
+                        if (key_exists($child['key'], $ocItems)) {
+                            $this->flatMenu[$child['key']] = [
+                                'label' => self::getLabel($child, $locale, $child['title']),
+                                'description' => self::getDescription($child, $locale, $child['title']),
+                                'url' => $ocItems[$child['key']]->url
+                            ];
+                        }
                     }
                 }
                 if (key_exists($subItem['key'], $ocItems)) {
