@@ -4,6 +4,7 @@ use Backend\FormWidgets\RichEditor;
 use Log;
 use Yaml;
 use Lang;
+use Cache;
 use BackendMenu;
 use October\Rain\Support\Facades\File;
 use RainLab\Translate\Models\Locale;
@@ -81,18 +82,23 @@ class MenuEditor extends RichEditor
     }
 
     private function addHelpContent(&$menu) {
-        $url = 'http://which.andevent.net/centralized/help';
-        $options = array(
-            'http' => array(
-                'method'  => 'GET',
-                'timeout' => 12
-            )
-        );
-        $context  = stream_context_create($options);
-        $content = file_get_contents($url, false, $context);
+        $minutes = 5;
+        $yamlContents = Cache::remember('centralizedHelp', $minutes, function() {
+            $options = array(
+                'http' => array(
+                    'header' => "User-Agent:MyAgent/1.0\r\n",
+                    'method'  => 'GET',
+                    'timeout' => 12
+                )
+            );
+            $url = 'http://which.andevent.net/centralized/help';
+            $context  = stream_context_create($options);
+            $content = file_get_contents($url, false, $context);
 
-        if ($content) {
-            $yamlContents = json_decode($content, true)['help'];
+            return $content ? json_decode($content, true)['help'] : [];
+        });
+
+        if (count($yamlContents)) {
             foreach ($menu as &$entry) {
                 if (key_exists($entry['key'], $yamlContents)) {
                     $entry['data'] = key_exists('data', $entry) ? $entry['data'] : [];

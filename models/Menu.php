@@ -51,6 +51,7 @@ class Menu extends Model
         }
         File::put(storage_path('eventmanager/menu/') . 'menu.yaml', $menuYaml);
         Cache::forget('searchTags');
+        Cache::forget('centralizedHelp');
         $this->sendHelp($helpData);
     }
 
