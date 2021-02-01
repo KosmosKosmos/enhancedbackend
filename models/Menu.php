@@ -160,7 +160,7 @@ class Menu extends Model
     }
 
     public static function generateKey($item, $key, $parentKey) {
-        $labelKey = key_exists('label', $item) ? $item->label : $key;
+        $labelKey = isset($item->label) ? $item->label : $key;
         $labelKey = (strpos($labelKey, '::') === false && $parentKey != '') ? $parentKey.'.'.$labelKey : $labelKey;
         return str_replace(' ', '_', $labelKey);
     }
