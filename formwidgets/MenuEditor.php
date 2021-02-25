@@ -95,7 +95,10 @@ class MenuEditor extends RichEditor
             $context  = stream_context_create($options);
             $content = file_get_contents($url, false, $context);
 
-            return $content ? json_decode($content, true)['help'] : [];
+            if ($content) {
+                $content = json_decode($content, true);
+            }
+            return is_array($content) ? $content['help'] : [];
         });
 
         if (count($yamlContents)) {
