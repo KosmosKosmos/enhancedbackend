@@ -55,15 +55,15 @@ class MenuEditor extends RichEditor
         $structure = [];
         foreach($menu as $key => $item) {
             $entry = [
-                'title' => Lang::get(key_exists('label', $item) ? $item->label : $key),
+                'title' => Lang::get((isset($item->label) && $item->label) ? $item->label : $key),
                 'key' => $item->key,
             ];
-            if (key_exists('subMenu', $item) && count($item->subMenu) > 1) {
-                $entry['children'] = $this->extractStructure($item->subMenu, key_exists('isGrouped', $item));
+            if (isset($item->subMenu) && $item->subMenu && count($item->subMenu) > 1) {
+                $entry['children'] = $this->extractStructure($item->subMenu, isset($item->isGrouped) && $item->isGrouped);
                 $entry['isExpanded'] = false;
             } else {
                 $entry['isLeaf'] = true;
-                $entry['hasJs'] = key_exists('hasJs', $item);
+                $entry['hasJs'] = isset($item->hasJs) && $item->hasJs;
             }
             $structure[] = $entry;
         }
@@ -74,7 +74,7 @@ class MenuEditor extends RichEditor
         $keys = [];
         foreach($menu as $index => $item) {
             $keys[$item['key']] = $item;
-            if ($withChildren && key_exists('children', $item)) {
+            if ($withChildren && isset($item->children) && $item->children) {
                 $keys = array_merge($keys, $this->extractKeys($item['children']));
             }
         }
