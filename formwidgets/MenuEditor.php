@@ -74,7 +74,7 @@ class MenuEditor extends RichEditor
         $keys = [];
         foreach($menu as $index => $item) {
             $keys[$item['key']] = $item;
-            if ($withChildren && isset($item->children) && $item->children) {
+            if ($withChildren && isset($item['children']) && $item['children']) {
                 $keys = array_merge($keys, $this->extractKeys($item['children']));
             }
         }
@@ -101,7 +101,7 @@ class MenuEditor extends RichEditor
             return is_array($content) ? $content['help'] : [];
         });
 
-        if (count($yamlContents)) {
+        if ($yamlContents && count($yamlContents)) {
             foreach ($menu as &$entry) {
                 if (key_exists($entry['key'], $yamlContents)) {
                     $entry['data'] = key_exists('data', $entry) ? $entry['data'] : [];
@@ -116,9 +116,10 @@ class MenuEditor extends RichEditor
 
     private function getMergedMenu() {
         $octoberMenu = $this->extractStructure(Menu::getOctoberMenu());
-        $loadedMenu = Menu::getStoredMenu();
+        $loadedMenu = Menu::getStoredMenuArray();
         $octoberKeys = $this->extractKeys($octoberMenu);
         $loadedKeys = $this->extractKeys($loadedMenu, true);
+//        $this->getDifference($octoberKeys, $loadedKeys);
         $newKeys = array_diff(array_keys($octoberKeys), array_keys($loadedKeys));
         foreach($newKeys as $key) {
             $item = $octoberKeys[$key];
@@ -129,6 +130,11 @@ class MenuEditor extends RichEditor
         $this->addHelpContent($loadedMenu);
         return $loadedMenu;
     }
+
+    private function getDifference($octoberKeys, $loadedKeys) {
+        dd([$octoberKeys, $loadedKeys]);
+    }
+
 
     /**
      * Prepares the form widget view data

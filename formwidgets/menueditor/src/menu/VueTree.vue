@@ -9,7 +9,9 @@
                 @drop="nodeDropped"
                 @toggle="nodeToggled"
                 v-model="nodes">
-            <template slot="title" slot-scope="{ node }">{{getTitle(node)}}</template>
+            <template slot="title" slot-scope="{ node }">
+                {{getTitle(node)}} <span class="uk-badge" v-if="node.data && node.data.isNew">NEU</span>
+            </template>
             <template slot="toggle" slot-scope="{ node }">
               <span v-if="!node.isLeaf">
                 <i v-if="node.isExpanded" uk-icon="album"></i>
@@ -179,7 +181,7 @@
                     this.save();
                 });
             },
-            nodeDropped(nodes, position, event) {
+            nodeDropped(nodes, after, event) {
                 this.save();
             },
             toggleVisibility: function (event, node) {

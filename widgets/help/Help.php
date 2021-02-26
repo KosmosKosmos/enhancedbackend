@@ -25,7 +25,8 @@ class Help extends WidgetBase
     }
 
     public function onGetHelpPage() {
-        $locale = UserPreference::forUser()->get('backend::backend.preferences', ['locale' => 'en'])['locale'];
+        $preferences = UserPreference::forUser()->get('backend::backend.preferences');
+        $locale = $preferences && isset($preferences['locale']) ? $preferences['locale'] : 'de';
         $pageKey = post()['page'];
         try {
             $file = 'http://which.andevent.net/centralized/help/'.$locale.'/'. $pageKey;

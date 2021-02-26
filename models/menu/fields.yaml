@@ -4,8 +4,8 @@
 
 fields:
   descr:
-    label: Enhanced Backend
+    label: kosmoskosmos.enhancedbackend::lang.form.label
     type: section
-    comment: Here you can edit the name and the structure of the backend menu
+    comment: kosmoskosmos.enhancedbackend::lang.form.description
   menuItems:
     type: menueditor

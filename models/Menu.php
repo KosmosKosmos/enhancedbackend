@@ -1,6 +1,7 @@
 <?php namespace KosmosKosmos\EnhancedBackend\Models;
 
 use Andosto\EventManager\Plugin;
+use Backend\Classes\SideMenuItem;
 use Backend\Models\UserPreference;
 use Config;
 use Cache;
@@ -24,19 +25,26 @@ class Menu extends Model
         'System.Behaviors.SettingsModel',
         '@RainLab.Translate.Behaviors.TranslatableModel'
     ];
-
-    // A unique code
     public $settingsCode = 'enhanced.backend.settings';
-
-    // Reference to field configuration
     public $settingsFields = 'fields.yaml';
-
     private $currentKey = '';
     private $flatMenu = [];
 
     public function beforeSave()
     {
         $menu = json_decode($this->value['menuItems'], true);
+        foreach ($menu as $mainIndes => $menuItem) {
+            if (isset($menuItem['data']) && isset($menuItem['data']['isNew'])) {
+                unset($menu[$mainIndes]['data']['isNew']);
+            }
+            if (isset($menuItem['children'])) {
+                foreach ($menuItem['children'] as $subIndex => $subItem) {
+                    if (isset($subItem['data']) && isset($subItem['data']['isNew'])) {
+                        unset($menu[$mainIndes]['children'][$subIndex]['data']['isNew']);
+                    }
+                }
+            }
+        }
         $helpData = $this->extractHelpContent($menu);
         $helpData = $this->extractHelpImages($helpData);
         $this->cleanHelpContent($menu);
@@ -58,7 +66,7 @@ class Menu extends Model
     private function extractHelpContent($menu) {
         $helpContent = [];
         foreach ($menu as $entry) {
-            if (key_exists('data', $entry) && key_exists('help', $entry['data'])) {
+            if (isset($entry['data']) && isset($entry['data']['help'])) {
                 $content = implode('', $entry['data']['help']);
                 if ($content != '') {
                     $helpContent[$entry['key']] = $entry['data']['help'];
@@ -149,7 +157,41 @@ class Menu extends Model
         }
     }
 
-    public static function getStoredMenu() {
+    public function getMenu() : array {
+        return self::hasStoredMenu() ? $this->getFlatOctoberMenu() : self::getOctoberMenu();
+    }
+
+    public function getFlatOctoberMenu($flat = false) {
+        if ($flat) {
+            return Cache::get('flatMenu');
+        }
+        $storedMenu = self::getStoredMenuArray();
+        if (count($storedMenu)) {
+            $locale = self::getUserLang();
+            $menu = [];
+            $ocItems = self::getOctoberMenu(true);
+            foreach ($storedMenu as $storedMenuItem) {
+                $isActive = false;
+                $newItem = self::getRelatedOctoberMenuItem($storedMenuItem['key'], $ocItems);
+                $newItem = $this->combineMenuData($newItem, $storedMenuItem, $ocItems, $locale, $isActive, $this->currentKey);
+                if (BackendMenu::isMainMenuItemActive($newItem)) {
+                    $this->currentKey = $newItem->key;
+                }
+                $newItem->isActive = BackendMenu::isMainMenuItemActive($newItem) || $isActive;
+                $menu[] = $newItem;
+            }
+            Cache::forever('flatMenu', $this->flatMenu);
+            return $menu;
+        } else {
+            return self::getOctoberMenu();
+        }
+    }
+
+    private static function hasStoredMenu() {
+        return File::exists(storage_path('eventmanager/menu/') . 'menu.yaml');
+    }
+
+    public static function getStoredMenuArray() : array {
         $file = storage_path('eventmanager/menu/') . 'menu.yaml';
         $yamlContents = [];
         if (File::exists($file)) {
@@ -165,7 +207,7 @@ class Menu extends Model
         return str_replace(' ', '_', $labelKey);
     }
 
-    public static function getOctoberMenu($flat = false) {
+    public static function getOctoberMenu($flat = false) : array {
         $mainMenuItems = BackendMenu::listMainMenuItems();
         $menu = [];
         $keyMap = [];
@@ -174,27 +216,8 @@ class Menu extends Model
             $keyMap[$menuItem->key] = $menuItem;
             $sideMenuItems = BackendMenu::listSideMenuItems($menuItem->owner, $menuItem->code);
             $menuItem->subMenu = count($sideMenuItems) > 1 ? $sideMenuItems : [];
-
             if (strpos($key, 'OCTOBER.SYSTEM.SYSTEM') !== false) {
-                $url = null;
-                $items = SettingsManager::instance()->listItems('system');
-                $subMenu = [];
-                foreach($items as $settingsKey => $item) {
-                    $subKey = self::generateKey([], $settingsKey, $menuItem->key);
-                    $subSubItems = array_map(function($subItem) use ($subKey, &$keyMap, &$url) {
-                        $url = $url ? $url : $subItem->url;
-                        $subItem->key = self::generateKey($subItem, '', $subKey);
-                        $keyMap[$subItem->key] = $subItem;
-                        return $subItem;
-                    }, $item);
-                    $subMenu[] = (object) [
-                        'key' => $subKey,
-                        'label' => $settingsKey,
-                        'subMenu' => $subSubItems
-                    ];
-                }
-                $menuItem->subMenu = $subMenu;
-                $menuItem->url = $url;
+                self::getSettingsMenu($menuItem);
             } else {
                 foreach($menuItem->subMenu as $subKey => &$subItem) {
                     $subItem->key = self::generateKey($subItem, $subKey, $menuItem->key);
@@ -215,9 +238,41 @@ class Menu extends Model
         return $flat ? $keyMap : $menu;
     }
 
-    public static function generateTagListForSearch() {
+    private static function getSettingsMenu(&$menuItem) {
+        $url = null;
+        $items = SettingsManager::instance()->listItems('system');
+        $subMenu = [];
+        foreach($items as $settingsKey => $item) {
+            $subKey = self::generateKey([], $settingsKey, $menuItem->key);
+            $subSubItems = [];
+            foreach ($item as $subItem) {
+                $subItem->key = self::generateKey($subItem, '', $subKey);
+                $subItem->url = $url ? $url : $subItem->url;
+                $subItem->counter = 0;
+                $subItem->counterLabel = null;
+                $subItem->owner = 'null';
+                $subSubItems[] = $subItem;
+                $keyMap[$subItem->key] = $subItem;
+                $subItem->attributes = [];
+            }
+            $subMenu[] = (object) [
+                'key' => $subKey,
+                'label' => $settingsKey,
+                'subMenu' => $subSubItems,
+                'url' => null,
+                'counterLabel' => '',
+                'counter' => null,
+                'isActive' => false,
+            ];
+        }
+        $menuItem->isGroup = true;
+        $menuItem->subMenu = $subMenu;
+        $menuItem->url = $url;
+    }
+
+    public static function generateTagListForSearch() : array {
         $tagList = [];
-        $storedMenu = self::getStoredMenu();
+        $storedMenu = self::getStoredMenuArray();
         if (count($storedMenu)) {
             $tagList = self::extractTags($storedMenu);
         }
@@ -237,42 +292,11 @@ class Menu extends Model
         return $tags;
     }
 
-    public function getMenu() {
-//        Cache::forget('flatMenu');
-        return $this->getFlatOctoberMenu();
-    }
-
     public function getCurrentKey() {
         return $this->currentKey;
     }
 
-    public function getFlatOctoberMenu($flat = false) {
-        if ($flat) {
-            return Cache::get('flatMenu');
-        }
-        $storedMenu = self::getStoredMenu();
-        if (count($storedMenu)) {
-            $locale = UserPreference::forUser()->get('backend::backend.preferences', ['locale' => 'en'])['locale'];
-            $menu = [];
-            $ocItems = self::getOctoberMenu(true);
-            foreach ($storedMenu as $storedMenuItem) {
-                $isActive = false;
-                $newItem = self::getRelatedOctoberMenuItem($storedMenuItem['key'], $ocItems);
-                $newItem = $this->combineMenuData($newItem, $storedMenuItem, $ocItems, $locale, $isActive, $this->currentKey);
-                if (BackendMenu::isMainMenuItemActive($newItem)) {
-                    $this->currentKey = $newItem->key;
-                }
-                $newItem->isActive = BackendMenu::isMainMenuItemActive($newItem) || $isActive;
-                $menu[] = $newItem;
-            }
-            Cache::forever('flatMenu', $this->flatMenu);
-            return $menu;
-        } else {
-            return self::getOctoberMenu();
-        }
-    }
-
-    private static function getRelatedOctoberMenuItem($key, $ocItems) {
+    private static function getRelatedOctoberMenuItem($key, $ocItems) : object {
         if (!key_exists($key, $ocItems)) {
             return (object) [
                 'key' => $key,
@@ -287,15 +311,7 @@ class Menu extends Model
         } else {
             $newItem = (object) $ocItems[$key];
             if ($key == 'system::lang.settings.menu_label') {
-                $items = SettingsManager::instance()->listItems('system');
-                $subMenu = [];
-                foreach($items as $item) {
-                    $subMenu = array_merge($subMenu, $item);
-                }
-                $newItem->allItems = $items;
-                $newItem->children = $items;
-                $newItem->subMenu = $subMenu;
-                $newItem->isGrouped = true;
+                self::getSettingsMenu($newItem);
             }
             return $newItem;
         }
@@ -312,7 +328,8 @@ class Menu extends Model
                 if (strpos($subItem['key'], 'system::lang.system') !== false && key_exists('children', $subItem)) {
                     foreach ($subItem['children'] as $child) {
                         if (key_exists($child['key'], $ocItems)) {
-                            $this->flatMenu[$child['key']] = [
+                            $this->flatMenu[$child['key']] =
+                                [
                                 'label' => self::getLabel($child, $locale, $child['title']),
                                 'description' => self::getDescription($child, $locale, $child['title']),
                                 'url' => $ocItems[$child['key']]->url
@@ -346,7 +363,7 @@ class Menu extends Model
         return $newItem;
     }
 
-    private static function getFlatInfo($menuItem) {
+    private static function getFlatInfo($menuItem) : array {
         return [
             'label' => $menuItem->label,
             'description' => $menuItem->description,
@@ -354,7 +371,7 @@ class Menu extends Model
         ];
     }
 
-    private static function getLabel($storedItem, $locale, $default) {
+    private static function getLabel($storedItem, $locale, $default) : string {
         $label = key_exists('data', $storedItem) && key_exists('titles', $storedItem['data'])
             ? $storedItem['data']['titles'] : [];
         return key_exists($locale, $label)
@@ -362,12 +379,17 @@ class Menu extends Model
             : (key_exists('en', $label) ? $label['en'] : Lang::get($default));
     }
 
-    private static function getDescription($storedItem, $locale, $default) {
+    private static function getDescription($storedItem, $locale, $default) : string {
         $label = key_exists('data', $storedItem) && key_exists('description', $storedItem['data'])
             ? $storedItem['data']['description'] : [];
         return key_exists($locale, $label)
             ? $label[$locale]
             : (key_exists('en', $label) ? $label['en'] : Lang::get($default));
+    }
+
+    private static function getUserLang() : string {
+        $preferences = UserPreference::forUser()->get('backend::backend.preferences');
+        return $preferences && isset($preferences['locale']) ? $preferences['locale'] : 'de';
     }
 
 }
